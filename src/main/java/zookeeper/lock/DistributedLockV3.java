@@ -15,6 +15,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
+import org.jboss.netty.util.internal.StringUtil;
 
 public class DistributedLockV3 implements Watcher,Lock{
 	private ZooKeeper zk = null;
@@ -34,7 +35,11 @@ public class DistributedLockV3 implements Watcher,Lock{
 	}
 	
 	public void process(WatchedEvent event) {
-		System.out.println("已经watch:" + event.getPath());
+		String path = event.getPath();
+		System.out.println(threadName + ":被唤醒,prevPath=" + event.getPath());
+		if(path != null) {
+			latch.countDown();
+		}
 	}
 	
 	//阻塞公平锁
@@ -134,13 +139,8 @@ public class DistributedLockV3 implements Watcher,Lock{
 			}
 			//监控上一个节点
 			String prevZnodePath = childrens.get(index - 1);
-			Watcher watcher = new Watcher() {
-				public void process(WatchedEvent event) {
-					System.out.println(threadName + ":被唤醒,prevPath=" + event.getPath());
-					latch.countDown();
-				}
-			};
-			Stat stat = zk.exists(znodePath + "/" +prevZnodePath, watcher);
+			//使用zookeeper创建时的watch进行监听
+			Stat stat = zk.exists(znodePath + "/" +prevZnodePath, true);
 			if(stat == null) {
 				return attempWaitForBlockLock(timeout, unit);
 			}else {

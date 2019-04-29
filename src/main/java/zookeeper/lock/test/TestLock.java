@@ -75,7 +75,7 @@ class MyRunnableV4 implements Runnable{
 		DistributedLockV3 distributedLock = new DistributedLockV3();
 		try {
 			//等待获取锁的超时时间是4秒钟
-			boolean isAcquire = distributedLock.tryLock(1, TimeUnit.SECONDS);
+			boolean isAcquire = distributedLock.tryLock(10, TimeUnit.SECONDS);
 			if(isAcquire) {
 				System.out.println(Thread.currentThread().getName() + " excute.....");
 				Thread.sleep(2000);//执行业务逻辑
