@@ -1,4 +1,4 @@
-package zookeeper;
+package zookeeper.lock;
 
 import java.io.IOException;
 import java.util.Collections;

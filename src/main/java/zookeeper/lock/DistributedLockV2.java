@@ -1,8 +1,9 @@
-package zookeeper;
+package zookeeper.lock;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -12,7 +13,7 @@ import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
-public class DistributedLock implements Watcher{
+public class DistributedLockV2 implements Watcher{
 	private ZooKeeper zk = null;
 	private String znodePath = "/exclusiveLock";
 	private String znodeName = "lock_";
@@ -20,7 +21,8 @@ public class DistributedLock implements Watcher{
 	private int sessionTimeOut = 5000;
 	private String lockPath = null;
 	private String threadName = Thread.currentThread().getName();
-	public DistributedLock() {
+	private CountDownLatch latch = new CountDownLatch(1);
+	public DistributedLockV2() {
 		try {
 			zk = new ZooKeeper(connectString, sessionTimeOut, this);
 		} catch (IOException e) {
@@ -59,20 +61,15 @@ public class DistributedLock implements Watcher{
 			String prevZnodePath = childrens.get(index - 1);
 			Watcher watcher = new Watcher() {
 				public void process(WatchedEvent event) {
-					synchronized(this) {
-                        System.out.println(threadName + ":被唤醒,prevPath=" + event.getPath());
-						this.notifyAll();
-					}	   
+                    System.out.println(threadName + ":被唤醒,prevPath=" + event.getPath());
+					latch.countDown();
 				}
 			};
 			Stat stat = zk.exists(znodePath + "/" +prevZnodePath, watcher);
 			if(stat == null) {
 				attempLock();
 			}else {
-				synchronized(watcher) {
-					System.out.println(threadName + ":被阻塞");
-					watcher.wait();
-				}
+				latch.await();
 				attempLock();
 			}
 		} catch (KeeperException e) {

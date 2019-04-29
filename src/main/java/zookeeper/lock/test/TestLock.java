@@ -1,9 +1,9 @@
-package zookeeper.test;
+package zookeeper.lock.test;
 
 import java.util.concurrent.TimeUnit;
 
-import zookeeper.DistributedLockV2;
-import zookeeper.DistributedLockV3;
+import zookeeper.lock.DistributedLockV2;
+import zookeeper.lock.DistributedLockV3;
 
 public class TestLock {
 
